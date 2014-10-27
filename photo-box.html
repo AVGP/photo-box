@@ -1,0 +1,127 @@
+<template>
+  <style>
+    :host { display: inline-block; }
+    #error, #nosupport {
+      background-color: #ffd;
+      border:           1px solid yellow;
+      padding:          1em;
+      margin:           0.5em;
+    }
+
+    p { text-align: center; }
+    canvas { display: none; }
+
+    .hidden { display: none; }
+    .block  { display: block;}
+  </style>
+  <div>
+    <div id="error" class="hidden"><content select=".error">Oops! Something went wrong :(</content></div>
+    <div id="nosupport" class="hidden"><content select=".fallback">Oh no! Your browser does not support taking pictures from your webcam :(</content></div>
+
+    <video controls="false" autoplay="true"></video>
+    <img class="hidden">
+    <canvas></canvas>
+    <p>
+      <button id="snapshot"><content select="label[for='snapshotButton']">Take Snapshot</content></button>
+      <button id="retake" class="hidden">Try again</button>
+      <button id="save" class="hidden"><content select="label[for='saveButton']">Save</content></button>
+      <a id="saveLink" href="#" download="snapshot.png" class="hidden"></a>
+    </p>
+  </div>
+</template>
+<script>
+  var PhotoBox = undefined, currentScript = document.currentScript;
+
+  navigator.getUserMedia = ( navigator.getUserMedia ||
+    navigator.webkitGetUserMedia ||
+    navigator.mozGetUserMedia ||
+    navigator.msGetUserMedia);
+
+  (function() {
+
+    var elemPrototype = Object.create(HTMLImageElement.prototype);
+
+    elemPrototype.createdCallback = function() {
+      this.root = this.createShadowRoot();
+      var tplContent = currentScript.ownerDocument.querySelector("template").content,
+          node       = document.importNode(tplContent, true);
+
+      this.root.appendChild(node);
+    };
+
+    elemPrototype.attachedCallback = function() {
+      var self = this;
+
+      this.root.querySelector("button#save").addEventListener("click", function() {
+        var linkElem = self.root.querySelector("#saveLink");
+        if(linkElem.dispatchEvent) {
+          linkElem.dispatchEvent(new Event('click'));
+        } else {
+          linkElem.fireEvent(new Event('click'));
+        }
+      });
+
+      this.root.querySelector("button#snapshot").addEventListener("click", function() {
+        if(!self.stream) return;
+
+        var root = self.root,
+            canvas = root.querySelector("canvas"),
+            video  = root.querySelector("video"),
+            image  = root.querySelector("img"),
+            save = root.querySelector("a#saveLink"),
+            ctx = canvas.getContext("2d");
+
+        canvas.width  = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        image.src = canvas.toDataURL('image/png');
+        image.className = '';
+        video.className = 'hidden';
+        video.pause();
+        video.src = null;
+        video.mozSrcObject = null;
+        self.stream.stop();
+        save.href = image.src;
+
+        root.querySelector("#snapshot").className = "hidden";
+        root.querySelector("#retake").className = "";
+        root.querySelector("#save").className = "";
+      });
+
+      this.root.querySelector("button#retake").addEventListener('click', function() {
+        var root = self.root;
+        root.querySelector("#snapshot").className = "";
+        root.querySelector("#retake").className = "hidden";
+        root.querySelector("img").className = "hidden";
+        root.querySelector("video").className = "";
+        root.querySelector("#save").className = "hidden";
+        self.startCapture();
+      })
+
+      // Fallback
+      if(!navigator.getUserMedia) {
+        this.root.querySelector("#nosupport").className = '';
+        this.root.querySelector("video").className = 'hidden';
+      }
+
+      this.startCapture = function() {
+        self.root.querySelector("#error").className = 'hidden';
+        self.root.querySelector("video").className = '';
+        navigator.getUserMedia({video: true}, function(stream) {
+          self.root.querySelector("video").src = window.URL.createObjectURL(stream);
+          self.stream = stream;
+        }, function(err) {
+          console.log("Error", err);
+          self.root.querySelector("#error").className = '';
+          self.root.querySelector("video").className = 'hidden';
+        });
+      }
+
+      if(this.attributes.autostart) {
+        this.startCapture();
+      }
+    };
+
+    PhotoBox = document.registerElement("photo-box", { prototype: elemPrototype });
+  }());
+</script>
