@@ -1,0 +1,10 @@
+{
+  "name": "photo-box",
+  "usage": "<photo-box></photo-box>",
+  "description": "Component that allows the user to take a screenshot and download it",
+  "links": {
+    "demo": "http://avgp.github.io/photo-box/index.html",
+    "repository": "https://github.com/avgp/photo-box",
+    "documentation": "https://github.com/AVGP/photo-box/blob/gh-pages/README.md"
+  }
+}
