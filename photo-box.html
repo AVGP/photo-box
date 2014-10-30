@@ -30,14 +30,14 @@
   </div>
 </template>
 <script>
-  var PhotoBox = undefined, currentScript = document.currentScript;
+  var PhotoBox = undefined;
 
   navigator.getUserMedia = ( navigator.getUserMedia ||
     navigator.webkitGetUserMedia ||
     navigator.mozGetUserMedia ||
     navigator.msGetUserMedia);
 
-  (function() {
+  (function(currentScript) {
 
     var elemPrototype = Object.create(HTMLImageElement.prototype);
 
@@ -123,5 +123,5 @@
     };
 
     PhotoBox = document.registerElement("photo-box", { prototype: elemPrototype });
-  }());
+  }(document._currentScript || document.currentScript));
 </script>
