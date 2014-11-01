@@ -16,7 +16,10 @@
   </style>
   <div>
     <div id="error" class="hidden"><content select=".error">Oops! Something went wrong :(</content></div>
-    <div id="nosupport" class="hidden"><content select=".fallback">Oh no! Your browser does not support taking pictures from your webcam :(</content></div>
+    <div id="nosupport" class="hidden">
+      <content select=".fallback">Oh no! Your browser does not support taking pictures from your webcam :( But you can use the button below:</content>
+      <input id="filepicker" type="file" accept="images/*" capture>
+    </div>
 
     <video controls="false" autoplay="true"></video>
     <img class="hidden">
@@ -51,6 +54,28 @@
 
     elemPrototype.attachedCallback = function() {
       var self = this;
+
+      this.root.querySelector("#filepicker").addEventListener("change", function() {
+        if(!this.files || !this.files[0]) {
+          return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function(e) {
+          var image = self.root.querySelector("img"),
+              save  = self.root.querySelector("#save");
+
+          image.src = e.target.result;
+          image.className = '';
+          save.href = image.src;
+
+          root.querySelector("#snapshot").className = "hidden";
+          root.querySelector("#retake").className = "";
+          save.className = "";
+
+        }
+        reader.readAsDataURL(this.files[0]);
+      });
 
       this.root.querySelector("button#save").addEventListener("click", function() {
         var linkElem = self.root.querySelector("#saveLink");
